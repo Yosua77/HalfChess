@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_Secondary"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".SelectDifficultyActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Difficulty :"
+        android:textSize="34sp"
+        android:textColor="@color/color_PrimaryDark"
+        android:fontFamily="@font/bahnschrift_regular"/>
+    <Button
+        android:id="@+id/bEasy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="60dp"
+        android:backgroundTint="@color/color_PrimaryDark"
+        android:text="Easy"
+        android:onClick="onClick"
+        android:layout_marginTop="10dp"/>
+    <Button
+        android:id="@+id/bNormal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/color_PrimaryDark"
+        android:text="Medium"
+        android:paddingHorizontal="50dp"
+        android:onClick="onClick"
+        android:layout_marginTop="10dp"/>
+    <Button
+        android:id="@+id/bHard"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/color_PrimaryDark"
+        android:text="Hard"
+        android:paddingHorizontal="60dp"
+        android:onClick="onClick"
+        android:layout_marginTop="10dp"/>
+    <Button
+        android:id="@+id/bBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:backgroundTint="@color/color_Primary"
+        android:text="Back"
+        android:onClick="onClick"
+        android:layout_marginTop="30dp"/>
+
+</LinearLayout>
