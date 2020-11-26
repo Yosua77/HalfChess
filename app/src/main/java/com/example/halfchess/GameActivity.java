@@ -157,19 +157,19 @@ public class GameActivity extends AppCompatActivity {
     void defaultState(){
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 4; j++) {
-                if(papan[i][j].getBidak().getValue() != 0 && papan[i][j].getBidak().isWhite() == false){
+                if(papan[i][j].getBidak().getValue() != 0 && !papan[i][j].getBidak().isWhite()){
                     papan[i][j].letak.setRotationX(180);
                     papan[i][j].letak.setRotationY(180);
-                }else if(papan[i][j].getBidak().getValue() == 0 || papan[i][j].getBidak().isWhite() == true){
+                }else if(papan[i][j].getBidak().getValue() == 0 || papan[i][j].getBidak().isWhite()){
                     papan[i][j].letak.setRotationX(0);
                     papan[i][j].letak.setRotationY(0);
                 }
                 papan[i][j].setPressed(false);
                 papan[i][j].setStatus(0);
-                if(papan[i][j].getBidak().getValue() == 5){
-                    if(turn && papan[i][j].getBidak().isWhite()) isCheckmate(i,j);
-                    else if(!turn && !papan[i][j].getBidak().isWhite()) isCheckmate(i,j);
-                }
+//                if(papan[i][j].getBidak().getValue() == 5){
+//                    if(turn && papan[i][j].getBidak().isWhite()) isCheckmate(i,j);
+//                    else if(!turn && !papan[i][j].getBidak().isWhite()) isCheckmate(i,j);
+//                }
             }
         }
     }
