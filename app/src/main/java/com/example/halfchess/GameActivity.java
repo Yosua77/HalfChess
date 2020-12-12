@@ -181,7 +181,7 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
-    //reset status papan
+    //defaultStatereset status papan
     void defaultState(){
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 4; j++) {
