@@ -301,6 +301,10 @@
             android:layout_height="wrap_content"
             android:fontFamily="@font/minionpro_bold"
             android:textSize="32sp"/>
+        <ImageView
+            android:id="@+id/virtualIV"
+            android:layout_width="0dp"
+            android:layout_height="0dp"/>
     </LinearLayout>
 
 </LinearLayout>
