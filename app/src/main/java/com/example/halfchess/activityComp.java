@@ -2,35 +2,27 @@ package com.example.halfchess;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.Arrays;
-
-public class GameActivity extends AppCompatActivity {
+public class activityComp extends AppCompatActivity {
     private String diff = "none";
     private Papan[][] papan = new Papan[8][4];
     private boolean turn,checkmate = false;
     private int baris = -1,kolom = -1,gamestate = -1;//draw = 0, p1 win = 1 p2 win = 2
     TextView whiteTurn,blackTurn;
-
+    BidakCom makanAi;
+    Boolean checkmakan = false;
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate (Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_game);
+        setContentView(R.layout.activity_comp);
 
         if(getIntent().hasExtra("diff"))
-         diff = getIntent().getStringExtra("diff");
-        // 1 : Pawn
-        // 2 : Bishop
-        // 3 : Knight
-        // 4 : Queen
-        // 5 : King
-        //=================================================================================================== player 2
+            diff = getIntent().getStringExtra("diff");
+
         papan[0][0] = new Papan(new Bidak(5,false),findViewById(R.id.board00), "#FFFFFF");
         papan[0][1] = new Papan(new Bidak(4,false),findViewById(R.id.board01), "#D9E1F6");
         papan[0][2] = new Papan(new Bidak(3,false),findViewById(R.id.board02), "#FFFFFF");
@@ -73,7 +65,6 @@ public class GameActivity extends AppCompatActivity {
         //===================================================================================================
         turn = true;
 
-
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 4; j++) {
                 papan[i][j].letak.setOnClickListener(this::onClick);
@@ -100,12 +91,15 @@ public class GameActivity extends AppCompatActivity {
                                 possibleMove(i, j);
                                 this.baris = i;
                                 this.kolom = j;
+                                //==============================================================
+
+                                //==============================================================
                                 break;
                             } else if (papan[i][j].getBidak().isWhite()) {                                                      // jika bukan turn e seng putih maka masuk sini
-                                Toast.makeText(GameActivity.this, "It is black's turn now", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activityComp.this, "It is black's turn now", Toast.LENGTH_SHORT).show();
                                 break;
                             } else if (!papan[i][j].getBidak().isWhite()) {                                                     // jika bukan turn e seng hitam maka masuk sini
-                                Toast.makeText(GameActivity.this, "It is white's turn now", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activityComp.this, "It is white's turn now", Toast.LENGTH_SHORT).show();
                                 break;
                             }
                         }
@@ -461,68 +455,4 @@ public class GameActivity extends AppCompatActivity {
             }
         }
     }
-
-    void isCheckmate(int baris, int kolom){
-        int[][] papanCheck = new int[baris+1][kolom+1];
-//        Arrays.fill(papan,0);
-        for (int i = -1; i < 2; i++) {
-            for (int j = -1; j < 2; j++) {
-                int b = baris+i,k = kolom+j;
-                if(turn){
-                    //pawn
-                    if(b-1 >= 0 && k-1 >= 0 && papan[b-1][k-1].getBidak().getValue() == 1) papanCheck[b][k]++;
-                    if(b-1 >= 0 && k+1 <= 3 && papan[b-1][k+1].getBidak().getValue() == 1) papanCheck[b][k]++;
-                }else{
-                    if(b+1 <= 7 && k-1 >= 0 && papan[b+1][k-1].getBidak().getValue() == 1) papanCheck[b][k]++;
-                    if(b+1 <= 7 && k+1 <= 3 && papan[b+1][k+1].getBidak().getValue() == 1) papanCheck[b][k]++;
-                }
-                //knight
-                if(b - 2 >= 0 && k - 1 >= 0 && papan[b - 2][k - 1].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(b - 2 >= 0 && k + 1 <= 3 && papan[b - 2][k + 1].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(b + 2 <= 7 && k - 1 >= 0 && papan[b + 2][k - 1].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(b + 2 <= 7 && k + 1 <= 3 && papan[b + 2][k + 1].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(k - 2 >= 0 && b - 1 >= 0 && papan[b - 1][k - 2].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(k - 2 >= 0 && b + 1 <= 7 && papan[b + 1][k - 2].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(k + 2 <= 3 && b - 1 >= 0 && papan[b - 1][k + 2].getBidak().getValue() == 3) papanCheck[b][k]++;
-                if(k + 2 <= 3 && b + 1 <= 7 && papan[b + 1][k + 2].getBidak().getValue() == 3) papanCheck[b][k]++;
-                //Bishop & Queen (Diagonal)
-                for (int l = 0; l < 8; l++) {
-                    for (int m = 0; m < 4; m++) {
-                        if(Math.abs(l-m) == Math.abs(b-k) && (papan[l][m].getBidak().getValue() == 2 || papan[l][m].getBidak().getValue() == 4)){
-                            papanCheck[b][k]++;
-                        }
-                        if(l+m == b+k && (papan[l][m].getBidak().getValue() == 2 || papan[l][m].getBidak().getValue() == 4)){
-                            papanCheck[b][k]++;
-                        }
-                    }
-                }
-                //Queen
-                for (int l = 0; l < 8; l++) {
-                    if(papan[l][k].getBidak().getValue() == 4) papanCheck[b][k]++;
-                }
-                for (int l = 0; l < 4; l++) {
-                    if(papan[b][l].getBidak().getValue() == 4) papanCheck[b][k]++;
-                }
-//                for (int l = -1; l < 2; l++) {
-//                    for (int m = -1; m < 2; m++) {
-//                        if(l !=0 || m != 0){
-//                            if(turn){
-//                                if(b+l <= 7 && b+l >= 0 && k + m <= 3 && k + m >= 0){
-//                                    if(papan[b+l][k+m].getBidak().getValue() == 5 &&)
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-            }
-        }
-    }
-
-//    boolean validateMove(int iawal, int jawal, int iakhir, int jakhir){
-//        boolean done = false;
-//        while(done){
-//
-//        }
-//        return false;
-//    }
 }
