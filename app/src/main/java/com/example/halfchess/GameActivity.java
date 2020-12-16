@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -14,7 +15,6 @@ import android.widget.Toast;
 import java.util.Arrays;
 
 public class GameActivity extends AppCompatActivity {
-    private String diff = "none";
     private Papan[][] papan = new Papan[8][4];
     private boolean turn,makan=false;
     private boolean[] check = new boolean[2];
@@ -22,15 +22,26 @@ public class GameActivity extends AppCompatActivity {
     private int baris = -1,kolom = -1,gamestate = -1;//draw = 0, white win = 1, black win = 2
     TextView whiteTurn,blackTurn;
     private MediaPlayer moveSound,clickSound,checkSound,eatSound,bgPlay;
+    private int[][] repetition = new int[4][4];
+    Computer com;
+    final Handler handler = new Handler();
 
     //tingkat kesulitan di variable diff, buat komputer jalan pake function move. untuk easy,medium,hard tolong kasih function sendiri"
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_game);
+        whiteTurn = findViewById(R.id.whiteText);
+        blackTurn = findViewById(R.id.blackText);
         virtualIV = findViewById(R.id.virtualIV);
-        if(getIntent().hasExtra("diff"))
-         diff = getIntent().getStringExtra("diff");
+        if(getIntent().hasExtra("diff")){
+            blackTurn.setRotationX(0);
+            blackTurn.setRotationY(0);
+            String diff = getIntent().getStringExtra("diff");
+            if(diff.equals("Easy")) com = new Computer(1,virtualIV);
+            else if(diff.equals("Normal")) com = new Computer(2,virtualIV);
+            else if(diff.equals("Hard")) com = new Computer(3,virtualIV);
+        }
         papan[0][0] = new Papan(new Bidak(5,false),findViewById(R.id.board00), "#FFFFFF");
         papan[0][1] = new Papan(new Bidak(4,false),findViewById(R.id.board01), "#D9E1F6");
         papan[0][2] = new Papan(new Bidak(3,false),findViewById(R.id.board02), "#FFFFFF");
@@ -73,22 +84,48 @@ public class GameActivity extends AppCompatActivity {
         turn = true;
         check[0] = false;
         check[1] = false;
+        Arrays.fill(repetition[0],-1);
+        Arrays.fill(repetition[1],-1);
+        Arrays.fill(repetition[2],-1);
+        Arrays.fill(repetition[3],-1);
 
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 4; j++) {
                 papan[i][j].letak.setOnClickListener(this::onClick);
             }
         }
-        whiteTurn = findViewById(R.id.whiteText);
-        blackTurn = findViewById(R.id.blackText);
         whiteTurn.setText("Your Turn");
         defaultState();
-        moveSound = MediaPlayer.create(this,R.raw.gerak);
-        clickSound = MediaPlayer.create(this,R.raw.pilih);
-        checkSound = MediaPlayer.create(this,R.raw.skak);
-        eatSound = MediaPlayer.create(this,R.raw.makan);
-        bgPlay = MediaPlayer.create(this,R.raw.bg_play);
+        moveSound = new MediaPlayer().create(this,R.raw.gerak);
+        clickSound = new MediaPlayer().create(this,R.raw.pilih);
+        checkSound = new MediaPlayer().create(this,R.raw.skak);
+        eatSound = new MediaPlayer().create(this,R.raw.makan);
+        bgPlay = new MediaPlayer().create(this,R.raw.bg_play);
         bgPlay.setLooping(true);
+        moveSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                moveSound.seekTo(0);
+            }
+        });
+        eatSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                eatSound.seekTo(0);
+            }
+        });
+        checkSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                checkSound.seekTo(0);
+            }
+        });
+        clickSound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                clickSound.seekTo(0);
+            }
+        });
     }
 
     @Override
@@ -149,14 +186,26 @@ public class GameActivity extends AppCompatActivity {
                                     }
 
                                 }
+                                for (int k = 0; k < 4; k++) {
+                                    if(papan[0][k].getBidak().getValue() == 1 && papan[0][k].getBidak().isWhite()){
+                                        papan[0][k].getBidak().setValue(4);
+                                    }
+                                    if(papan[7][k].getBidak().getValue() == 1 && !papan[7][k].getBidak().isWhite()){
+                                        papan[7][k].getBidak().setValue(4);
+                                    }
+                                }
                                 papan[baris][kolom].setBidak(new Bidak(0, false));
                                 papan[i][j].untouched = false;
                                 papan[baris][kolom].untouched = false;
                                 defaultState();
-                                if(!bgPlay.isPlaying()) bgPlay.start();
+                                if(!bgPlay.isPlaying()){
+                                    bgPlay.start();
+                                    bgPlay.setVolume(0.09f,0.09f );
+                                }
                                 turn = !turn;
                                 rotateView();
                                 isWinning();
+                                isRepeating(i,j,papan[i][j].getBidak().getValue());
                                 check[0] = false;
                                 check[1] = false;
                                 baris = -1;
@@ -174,7 +223,7 @@ public class GameActivity extends AppCompatActivity {
                                                     else {
                                                         check[0] = true;
                                                         checkSound.start();
-                                                        whiteTurn.setText("check!");
+                                                        whiteTurn.setText("Check!");
                                                     }
                                                     makan=false;
                                                     break;
@@ -189,12 +238,14 @@ public class GameActivity extends AppCompatActivity {
                                                     if (isSave(k, l, papan)) {
                                                         if(makan) eatSound.start();
                                                         else moveSound.start();
-                                                        blackTurn.setText("Your Turn");
+                                                        if(com ==null) blackTurn.setText("Your Turn");
+                                                        else blackTurn.setText("Thinking...");
                                                     }
                                                     else {
                                                         check[1] = true;
                                                         checkSound.start();
-                                                        blackTurn.setText("check!");
+                                                        if(com ==null) blackTurn.setText("Check!");
+                                                        else blackTurn.setText("Thinking...");
                                                     }
                                                     makan=false;
                                                     break;
@@ -203,6 +254,13 @@ public class GameActivity extends AppCompatActivity {
                                         }
                                         whiteTurn.setText("");
                                     }
+                                }
+                                if(!turn && com != null && gamestate == -1){
+                                    gamestate = -2;
+                                    handler.postDelayed(() -> {
+                                        int[] comMove = com.gerak(papan);
+                                        move(comMove[1],comMove[2],comMove[3],comMove[4]);
+                                    }, 500);
                                 }
                             } else {
                                 baris = -1;
@@ -216,23 +274,83 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
+    void isRepeating(int i, int j, int value){
+        if(turn){
+            //white index 0 and 1
+            if(repetition[0][0] == -1){
+                repetition[0][0] = value;
+                repetition[0][1] = i;
+                repetition[0][2] = j;
+                repetition[0][3] = 1;
+            }else if(repetition[1][0] == -1){
+                repetition[1][0] = value;
+                repetition[1][1] = i;
+                repetition[1][2] = j;
+                repetition[1][3] = 1;
+            }else{
+                if(repetition[0][0] == value && repetition[0][1] == i && repetition[0][2] == j){
+                    repetition[0][3] = 2;
+                }else if(repetition[0][3] == 2 && repetition[1][0] == value && repetition[1][1] == i && repetition[1][2] == j){
+                    repetition[1][3] = 2;
+                }else if(repetition[1][3] == 2 && repetition[0][0] == value && repetition[0][1] == i && repetition[0][2] == j){
+                    repetition[0][3] = 3;
+                }else if(repetition[0][3] == 3 && repetition[1][0] == value && repetition[1][1] == i && repetition[1][2] == j){
+                    gamestate = 0;
+                    whiteTurn.setText("Draw : Repetition");
+                    blackTurn.setText("Draw : Repetition");
+                }else{
+                    Arrays.fill(repetition[0],-1);
+                    Arrays.fill(repetition[1],-1);
+                }
+            }
+        }else{
+            if(repetition[2][0] == -1){
+                repetition[2][0] = value;
+                repetition[2][1] = i;
+                repetition[2][2] = j;
+                repetition[2][3] = 1;
+            }
+            else if(repetition[3][0] == -1){
+                repetition[3][0] = value;
+                repetition[3][1] = i;
+                repetition[3][2] = j;
+                repetition[3][3] = 1;
+            }else{
+                if(repetition[2][0] == value && repetition[2][1] == i && repetition[2][2] == j){
+                    repetition[0][3] = 2;
+                }else if(repetition[2][3] == 2 && repetition[3][0] == value && repetition[3][1] == i && repetition[3][2] == j){
+                    repetition[3][3] = 2;
+                }else if(repetition[3][3] == 2 && repetition[2][0] == value && repetition[2][1] == i && repetition[2][2] == j){
+                    repetition[2][3] = 3;
+                }else if(repetition[2][3] == 3 && repetition[3][0] == value && repetition[3][1] == i && repetition[3][2] == j){
+                    gamestate = 0;
+                    whiteTurn.setText("Draw : Repetition");
+                    blackTurn.setText("Draw : Repetition");
+                }else{
+                    Arrays.fill(repetition[2],-1);
+                    Arrays.fill(repetition[3],-1);
+                }
+            }
+        }
+    }
+
     //defaultState reset status papan
     void defaultState(){
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 4; j++) {
                 papan[i][j].setPressed(false);
                 papan[i][j].setStatus(0);
-                if(i == 0 && papan[i][j].getBidak().getValue() == 1 && papan[i][j].getBidak().isWhite()) papan[i][j].getBidak().setValue(4);
-                if(i == 7 && papan[i][j].getBidak().getValue() == 1 && !papan[i][j].getBidak().isWhite()) papan[i][j].getBidak().setValue(4);
             }
         }
     }
 
     void rotateView(){
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 4; j++) {
-                if(!turn)papan[i][j].letak.animate().rotationX(180).setDuration(500);
-                else papan[i][j].letak.animate().rotationX(0).setDuration(500);
+        if(com == null){
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 4; j++) {
+                    if(!turn)papan[i][j].letak.animate().rotationX(180).setDuration(500);
+                    else papan[i][j].letak.animate().rotationX(0).setDuration(500);
+                }
             }
         }
     }
@@ -245,21 +363,27 @@ public class GameActivity extends AppCompatActivity {
                 if(papan[i][j].getBidak().getValue() != 0 && papan[i][j].getBidak().isWhite()){
                     int jumlah = isAnyMove(i,j);
                     availableMoveWhite+=jumlah;
-                    if(papan[i][j].getBidak().getValue() == 1) Log.i("pionW",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 2) Log.i("bishopW",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 3) Log.i("knightW",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 4) Log.i("queenW",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 5) Log.i("kingW",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 5 && !isSave(i,j,papan)) checkWhite = true;
+                    if(papan[i][j].getBidak().getValue() == 1) Log.i("PionW",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 2) Log.i("BishopW",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 3) Log.i("KnightW",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 4) Log.i("QueenW",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 5) Log.i("KingW",jumlah+"");
+                    if(papan[i][j].getBidak().getValue() == 5 && !isSave(i,j,papan)){
+                        checkWhite = true;
+                    }
+                    Log.i("availableMoveWhite",availableMoveWhite+"");
                 }else if(papan[i][j].getBidak().getValue() != 0 && !papan[i][j].getBidak().isWhite()){
                     int jumlah = isAnyMove(i,j);
                     availableMoveBlack+= jumlah;
-                    if(papan[i][j].getBidak().getValue() == 1) Log.i("pion",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 2) Log.i("bishop",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 3) Log.i("knight",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 4) Log.i("queen",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 5) Log.i("king",jumlah+"");
-                    if(papan[i][j].getBidak().getValue() == 5 && !isSave(i,j,papan)) checkBlack = true;
+                    if(papan[i][j].getBidak().getValue() == 1) Log.i("PionB",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 2) Log.i("BishopB",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 3) Log.i("KnightB",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 4) Log.i("QueenB",jumlah+"");
+                    else if(papan[i][j].getBidak().getValue() == 5) Log.i("KingB",jumlah+"");
+                    if(papan[i][j].getBidak().getValue() == 5 && !isSave(i,j,papan)){
+                        checkBlack = true;
+                    }
+                    Log.i("availableMoveBlack",availableMoveBlack+"");
                 }
             }
         }
@@ -267,16 +391,19 @@ public class GameActivity extends AppCompatActivity {
             gamestate = 1;
             blackTurn.setText("Checkmate!");
             whiteTurn.setText("You win!");
-        }else if(availableMoveBlack == 0 && !checkBlack){
-            gamestate = 0;
-            whiteTurn.setText("Draw : Stalemate");
-            blackTurn.setText("Draw : Stalemate");
         }
         if(availableMoveWhite == 0 && checkWhite){
             gamestate = 2;
-            blackTurn.setText("You win!");
-            whiteTurn.setText("Checkmate!");
-        }else if(availableMoveWhite == 0 && !checkWhite){
+            if(com == null){
+                blackTurn.setText("You win!");
+                whiteTurn.setText("Checkmate!");
+            }else{
+                blackTurn.setText("Checkmate!");
+                whiteTurn.setText("You lose!");
+            }
+        }
+
+        if((turn && !checkWhite && availableMoveWhite == 0) || (!turn && !checkBlack && availableMoveBlack == 0)){
             gamestate = 0;
             whiteTurn.setText("Draw : Stalemate");
             blackTurn.setText("Draw : Stalemate");
@@ -1033,7 +1160,7 @@ public class GameActivity extends AppCompatActivity {
         }
         //queen
         for (int i = baris; i < 8; i++) {
-            if(papan[i][kolom].getBidak().getValue() == 4 && papan[i][kolom].getBidak().isWhite() != turn){
+            if(papan[i][kolom].getBidak().getValue() == 4 && papan[i][kolom].getBidak().isWhite() !=  papan[baris][kolom].getBidak().isWhite()){
                 return false;
             }
             else if(papan[i][kolom].getBidak().getValue() != 0) {
@@ -1041,7 +1168,7 @@ public class GameActivity extends AppCompatActivity {
             }
         }
         for (int i = baris; i >= 0; i--) {
-            if(papan[i][kolom].getBidak().getValue() == 4 && papan[i][kolom].getBidak().isWhite() != turn){
+            if(papan[i][kolom].getBidak().getValue() == 4 && papan[i][kolom].getBidak().isWhite() !=  papan[baris][kolom].getBidak().isWhite()){
                 return false;
             }
             else if(papan[i][kolom].getBidak().getValue() != 0 ) {
@@ -1049,7 +1176,7 @@ public class GameActivity extends AppCompatActivity {
             }
         }
         for (int i = kolom; i < 4; i++) {
-            if(papan[baris][i].getBidak().getValue() == 4 && papan[baris][i].getBidak().isWhite() != turn){
+            if(papan[baris][i].getBidak().getValue() == 4 && papan[baris][i].getBidak().isWhite() != papan[baris][kolom].getBidak().isWhite()){
                 return false;
             }
             else if(papan[baris][i].getBidak().getValue() != 0) {
@@ -1058,7 +1185,7 @@ public class GameActivity extends AppCompatActivity {
         }
 
         for (int i = kolom; i >= 0; i--) {
-            if(papan[baris][i].getBidak().getValue() == 4 && papan[baris][i].getBidak().isWhite() != turn){
+            if(papan[baris][i].getBidak().getValue() == 4 && papan[baris][i].getBidak().isWhite() !=  papan[baris][kolom].getBidak().isWhite()){
                 return false;
             }
             else if(papan[baris][i].getBidak().getValue() != 0) {
@@ -1081,6 +1208,7 @@ public class GameActivity extends AppCompatActivity {
 
     //move untuk computer gerak
     void move(int iawal, int jawal, int iakhir, int jakhir){
+        gamestate=-1;
         papan[iawal][jawal].letak.performClick();
         papan[iakhir][jakhir].letak.performClick();
     }

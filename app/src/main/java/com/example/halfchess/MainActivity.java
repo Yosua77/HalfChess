@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(i);
                 break;
             case R.id.bPvC:
-                Intent j = new Intent(MainActivity.this,activityComp.class);
+                Intent j = new Intent(MainActivity.this,SelectDifficultyActivity.class);
                 startActivity(j);
                 break;
             case R.id.bExit:
