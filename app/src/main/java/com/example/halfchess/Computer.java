@@ -85,6 +85,11 @@ public class Computer {
             Log.i("bestMoves_"+i+"Value",bestMoves.get(i)[6]+"");
         }
         int random = new Random().nextInt(bestMoves.size());
+        int percent = new Random().nextInt(10);
+        while (percent <= 3 && bestMoves.get(random)[0] == 5){
+            random = new Random().nextInt(bestMoves.size());
+            percent = new Random().nextInt(10);
+        }
         Log.i("random",random+"");
         return bestMoves.get(random);
     }
@@ -403,7 +408,7 @@ public class Computer {
                         if(Math.abs(iAsal - iTujuan) == 1){
                             if(papan[iTujuan][jTujuan].getBidak().getValue() == 0) if(isValid(iTujuan,jTujuan,papan,iAsal,jAsal, turn)) return true;
                         }else if(Math.abs(iAsal - iTujuan) == 2 && papan[iAsal][jAsal].untouched){
-                            if(papan[iTujuan][jTujuan].getBidak().getValue() == 0 && papan[iTujuan+1][jTujuan].getBidak().getValue() == 0) if(isValid(iTujuan,jTujuan,papan,iAsal,jAsal, turn)) return true;
+                            if(papan[iTujuan][jTujuan].getBidak().getValue() == 0 && iTujuan <= 6 && papan[iTujuan+1][jTujuan].getBidak().getValue() == 0) if(isValid(iTujuan,jTujuan,papan,iAsal,jAsal, turn)) return true;
                         }
                     }else if(Math.abs(jAsal-jTujuan) == 1){
                         if(Math.abs(iAsal - iTujuan) == 1){
@@ -418,7 +423,7 @@ public class Computer {
                         if(Math.abs(iAsal - iTujuan) == 1){
                             if(papan[iTujuan][jTujuan].getBidak().getValue() == 0) if(isValid(iTujuan,jTujuan,papan,iAsal,jAsal, turn)) return true;
                         }else if(Math.abs(iAsal - iTujuan) == 2 && papan[iAsal][jAsal].untouched){
-                            if(papan[iTujuan][jTujuan].getBidak().getValue() == 0 && papan[iTujuan-1][jTujuan].getBidak().getValue() == 0) if(isValid(iTujuan,jTujuan,papan,iAsal,jAsal, turn)) return true;
+                            if(papan[iTujuan][jTujuan].getBidak().getValue() == 0 && iTujuan >= 1 && papan[iTujuan-1][jTujuan].getBidak().getValue() == 0) if(isValid(iTujuan,jTujuan,papan,iAsal,jAsal, turn)) return true;
                         }
                     }else if(Math.abs(jAsal-jTujuan) == 1){
                         if(Math.abs(iAsal - iTujuan) == 1){
